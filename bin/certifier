@@ -9,7 +9,7 @@ import cement
 from cement.core.foundation import CementApp
 from cement.core import backend, foundation, controller, handler, hook, output
 
-from certifier import add_args
+from certifier import add_args, aws_credentials
 
 from tabulate import tabulate
 
@@ -26,6 +26,8 @@ class CertifierBaseController(controller.CementBaseController):
     @controller.expose(help="Check ELB certs")
     def elb(self):
         self.app.log.info('Inside elb function.')
+
+        print aws_credentials(self.app.pargs.credentials_file, self.app.pargs.profile)
 
 class Certifier(foundation.CementApp):
     class Meta:

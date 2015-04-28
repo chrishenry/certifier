@@ -15,15 +15,60 @@ USER_AGENT = 'BehanceOps Certifier/%s Python/%s %s/%s' % (
     platform.release()
 )
 
-def parse_aws_credentials_file(cfg):
+def logger():
+    pass
+
+def aws_credentials(file, profile):
+    """Try to get credentials"""
+
+    try:
+        return aws_credentials_env()
+    except Exception as e:
+        print "No environment vars"
+        pass
+
+    return aws_credentials_file(file, profile)
+    # try:
+    # except Exception as e:
+    #     print e.message
+    #     print "No credentials file"
+    #     pass
+
+    raise ValueError, 'No AWS credentials found'
+
+
+def aws_credentials_env():
+
+    if not os.environ.get('AWS_ACCESS_KEY_ID') or not os.environ.get('AWS_SECRET_ACCESS_KEY'):
+        raise Exception("Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY")
+
+    return {
+        'aws_access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
+        'aws_secret_access_key': os.environ.get('AWS_SECRET_ACCESS_KEY')
+    }
+
+def aws_credentials_file(cfg, profile='Credentials'):
     """Return a dictionary containing aws_access_key_id and aws_secret_access_key, given a file to a credentials file
        in the format expected by AWS tools (as described at http://j.mp/qGGHNp).
     """
 
-    if os.path.isfile(cfg) is False:
-        raise ValueError, 'File %s doesn\'t exist' % cfg
+    if profile != 'Credentials' and profile != 'default':
+        profile = 'profile %s' % profile
 
-    pass
+    config = ConfigParser.RawConfigParser()
+
+    # preserve case, which is important for cfn
+    config.optionxform = str
+    config.readfp(cfg)
+
+    if not config.has_section(profile):
+        raise ValueError, 'Profile %s doesn\'t exist' % profile
+
+    return {
+        'aws_access_key_id': config.get(profile, 'aws_access_key_id'),
+        'aws_secret_access_key': config.get(profile, 'aws_secret_access_key')
+    }
+
 
 def add_args(parser):
     """Add arguments to the parser object"""
@@ -34,7 +79,7 @@ def add_args(parser):
         help='Path to your AWS credentials file (ie /etc/aws-credentials.txt)'
     )
     parser.add_argument('-p', '--profile',
-        type=str, default=None,
+        type=str, default='Credentials', dest='profile',
         help='If using a credentials profile, specify here'
     )
     parser.add_argument('-r', '--region',
