@@ -8,3 +8,4 @@ argparse==1.2.1
 unittest2==0.5.1
 sure==1.2.9
 pygerduty==0.28
+pyopenssl==0.13.0
