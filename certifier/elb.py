@@ -1,18 +1,73 @@
 
 import boto.ec2.elb
 
+from socket import *
 from certifier import aws_credentials
-from certificate import verify
+from exception import CertifierException, CertifierWarningException
+from certificate import get_expiry
 
-def certify_elbs(aws_credentials, region='ue1'):
+from OpenSSL import SSL
 
-    # elbs = get_elbs(aws_credentials)
+def certify_elbs(aws_credentials, region='us-east-1'):
 
-    # verify("www.google-cant-possible-be-a-thing.com")
-    verify("hive.prod-be-aws.net")
-    # verify("prosite.com")
-    # verify("mir.behance.net")
-    # verify("mir-prod-ue1-1318465200.us-east-1.elb.amazonaws.com")
+    elbs = get_elbs(aws_credentials, region=region)
+
+    retval = []
+
+    for elb in elbs:
+
+        if elb.scheme != 'internet-facing':
+            continue
+
+        for listener in elb.listeners:
+            if listener[2] != 'HTTPS':
+                continue
+
+            error_msg = None
+
+            try:
+
+                expiry = get_expiry(elb.dns_name)
+
+            except CertifierWarningException as e:
+                print "CertifierWarningException"
+                print e.host
+                print e.message
+
+                error_msg = e.message
+
+            except CertifierException as e:
+                # print "CertifierException"
+                # print e.host
+                # print e.message
+
+                error_msg = e.message
+
+            except SSL.WantReadError as e:
+                # print e
+                # print e.message
+                # print dir(e)
+                # print "OpenSSL.SSL.WantReadError"
+
+                error_msg = e.message
+
+            except timeout as e:
+                # print e
+                # print e.message
+                # print e.args
+                # print dir(e)
+                # print type(e)
+
+                error_msg = e.message
+
+            retval.append(dict({
+                            'dns_name': elb.dns_name,
+                            'expiry': expiry,
+                            'arn': listener[4],
+                            'error': error_msg
+                        }))
+
+    return retval
 
 def get_elbs(aws_credentials, region='us-east-1'):
 

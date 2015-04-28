@@ -11,7 +11,6 @@ from OpenSSL import SSL
 PYOPENSSL = True
 
 CA_CERTS = "/etc/ssl/certs/ca-certificates.crt"
-HOST = ""
 
 # TODO: this check could be a bit more useful, as it returns codes listed
 #   here; https://www.openssl.org/docs/apps/verify.html#DIAGNOSTICS
@@ -21,20 +20,18 @@ def pyopenssl_check_callback(connection, x509, errnum, errdepth, ok):
 
     return True
 
-def verify(host, days_before_expiry=60):
-    global HOST
-
-    HOST = host
-    PORT = 443
+def get_expiry(host, port=443):
 
     try:
 
         # Check the DNS name
-        socket.getaddrinfo(HOST, PORT)[0][4][0]
+        socket.getaddrinfo(host, port)[0][4][0]
 
         # Connect to the host and get the certificate
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((HOST, PORT))
+        sock.settimeout(2)
+        sock.connect((host, port))
+
 
         # Set up the SSL context
         ctx = SSL.Context(SSL.TLSv1_METHOD)
@@ -44,23 +41,19 @@ def verify(host, days_before_expiry=60):
 
         # Make the connection get the cert
         ssl_sock = SSL.Connection(ctx, sock)
+        ssl_sock.setblocking(1)
         ssl_sock.set_connect_state()
-        ssl_sock.set_tlsext_host_name(HOST)
+        ssl_sock.set_tlsext_host_name(host)
         ssl_sock.do_handshake()
 
         x509 = ssl_sock.get_peer_certificate()
 
         if x509.has_expired():
-            raise CertifierException(HOST, "Cert is expired!")
+            raise CertifierException(host, "Cert is expired!")
 
         # Pull the certs `notAfter` date into a datetime object
         expire_date = datetime.strptime(x509.get_notAfter(), "%Y%m%d%H%M%SZ")
 
-        # If today + `days_before_expiry` is after the expiry, scream.
-        danger_date = datetime.now() + timedelta(days=days_before_expiry)
-
-        if danger_date > expire_date:
-            raise CertifierWarningException(HOST, "Expires on %s" % expire_date)
 
         return expire_date
 
