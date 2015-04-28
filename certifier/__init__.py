@@ -18,29 +18,28 @@ USER_AGENT = 'BehanceOps Certifier/%s Python/%s %s/%s' % (
 def logger():
     pass
 
-def aws_credentials(file, profile):
+def aws_credentials(credentials_file, profile):
     """Try to get credentials"""
 
     try:
         return aws_credentials_env()
     except Exception as e:
-        print "No environment vars"
-        pass
+        print e
 
-    return aws_credentials_file(file, profile)
-    # try:
-    # except Exception as e:
-    #     print e.message
-    #     print "No credentials file"
-    #     pass
+    try:
+        return aws_credentials_file(credentials_file, profile)
+    except Exception as e:
+        print e
 
     raise ValueError, 'No AWS credentials found'
 
-
 def aws_credentials_env():
 
-    if not os.environ.get('AWS_ACCESS_KEY_ID') or not os.environ.get('AWS_SECRET_ACCESS_KEY'):
-        raise Exception("Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY")
+    if not os.environ.get('AWS_ACCESS_KEY_ID'):
+        raise ValueError, 'No AWS_ACCESS_KEY_ID env var found'
+
+    if not os.environ.get('AWS_SECRET_ACCESS_KEY'):
+        raise ValueError, 'No AWS_SECRET_ACCESS_KEY env var found'
 
     return {
         'aws_access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
@@ -51,6 +50,9 @@ def aws_credentials_file(cfg, profile='Credentials'):
     """Return a dictionary containing aws_access_key_id and aws_secret_access_key, given a file to a credentials file
        in the format expected by AWS tools (as described at http://j.mp/qGGHNp).
     """
+
+    if cfg is None:
+        raise ValueError, 'No credentials file found'
 
     if profile != 'Credentials' and profile != 'default':
         profile = 'profile %s' % profile
@@ -83,7 +85,7 @@ def add_args(parser):
         help='If using a credentials profile, specify here'
     )
     parser.add_argument('-r', '--region',
-        type=str, default='ue1',
-        choices=['ue1', 'uw2', 'ew1', 'an1'],
+        type=str, default='us-east-1',
+        choices=['us-east-1', 'us-west-2', 'eu-west-1'],
         help='AWS region, defaults to ue1'
     )
