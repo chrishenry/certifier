@@ -12,13 +12,6 @@ import pygerduty
 __version__ = '0.0.1'
 __author__ = 'Behance Ops'
 
-USER_AGENT = 'BehanceOps Certifier/%s Python/%s %s/%s' % (
-    __version__,
-    platform.python_version(),
-    platform.system(),
-    platform.release()
-)
-
 def format_arn(arn):
     return arn.split(':')[-1]
 
