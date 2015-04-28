@@ -7,6 +7,8 @@ import ConfigParser
 
 from datetime import datetime, timedelta
 
+import pygerduty
+
 __version__ = '0.0.1'
 __author__ = 'Behance Ops'
 
@@ -36,6 +38,36 @@ def within_danger(expiry, days_before_expiry=60):
         return (True, diff)
     else:
         return (False, diff)
+
+def pd_create_event(certification):
+
+    if not os.environ.get('PD_KEY') or not os.environ.get('PD_SERVICE_KEY'):
+        raise Exception("Set PD_KEY and PD_SERVICE_KEY")
+
+    # Send pager duty alert
+    pd_key = os.environ.get('PD_KEY')
+    pd_service_key = os.environ.get('PD_SERVICE_KEY')
+
+    description = "ELB %s's SSL cert expires soon." % certification['dns_name']
+    incident_key = "ELB-%s/SSL_EXPIRY" % certification['dns_name']
+    details = "ELB %s's' with cert %s, expires in %s days" % \
+                (certification['dns_name'], certification['arn'], certification['days_til_expiry'])
+
+    try:
+
+        pager = pygerduty.PagerDuty("behance", pd_key)
+        pager.create_event(
+            pd_service_key,
+            description,
+            'trigger',
+            details,
+            incident_key
+        )
+
+    except Exception as e:
+        print e
+        raise
+
 
 def aws_credentials(credentials_file, profile):
     """Try to get credentials"""
@@ -90,7 +122,6 @@ def aws_credentials_file(cfg, profile='Credentials'):
         'aws_secret_access_key': config.get(profile, 'aws_secret_access_key')
     }
 
-
 def add_args(parser):
     """Add arguments to the parser object"""
 
@@ -107,5 +138,9 @@ def add_args(parser):
         type=str, default='us-east-1',
         choices=['us-east-1', 'us-west-2', 'eu-west-1'],
         help='AWS region, defaults to ue1'
+    )
+    parser.add_argument('-d', '--days',
+        type=int, default=60,
+        help='How many days in advance of expiry to alert.'
     )
 
