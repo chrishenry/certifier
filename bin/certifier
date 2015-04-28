@@ -9,13 +9,12 @@ import cement
 from cement.core.foundation import CementApp
 from cement.core import backend, foundation, controller, handler, hook, output
 
-from certifier import add_args, aws_credentials
+from certifier import add_args, aws_credentials, within_danger
 from certifier.elb import certify_elbs
 from certifier.exception import *
 
 from tabulate import tabulate
-
-import pprint
+from termcolor import colored
 
 # define an application base controller
 class CertifierBaseController(controller.CementBaseController):
@@ -33,6 +32,21 @@ class CertifierBaseController(controller.CementBaseController):
 
         creds = aws_credentials(self.app.pargs.credentials_file, self.app.pargs.profile)
         certifications = certify_elbs(creds)
+
+        for certification in certifications:
+
+
+            if certification['error'] is None:
+                danger_tuple = within_danger(certification['expiry'])
+
+                if danger_tuple[0]:
+                    certification['days_til_expiry'] = colored(danger_tuple[1], 'red')
+                else:
+                    certification['days_til_expiry'] = colored(danger_tuple[1], 'green')
+
+            if certification['error'] is not None:
+                certification['error'] = colored(certification['error'], 'red')
+
 
         self.app.render(certifications)
         return certifications

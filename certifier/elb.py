@@ -1,8 +1,10 @@
 
+from collections import OrderedDict
+
 import boto.ec2.elb
 
 from socket import *
-from certifier import aws_credentials
+from certifier import aws_credentials, format_arn, format_elb_dns_name
 from exception import CertifierException, CertifierWarningException
 from certificate import get_expiry
 
@@ -23,6 +25,7 @@ def certify_elbs(aws_credentials, region='us-east-1'):
             if listener[2] != 'HTTPS':
                 continue
 
+            expiry = None
             error_msg = None
 
             try:
@@ -60,10 +63,10 @@ def certify_elbs(aws_credentials, region='us-east-1'):
 
                 error_msg = e.message
 
-            retval.append(dict({
-                            'dns_name': elb.dns_name,
+            retval.append(OrderedDict({
+                            'dns_name': format_elb_dns_name(elb.dns_name),
                             'expiry': expiry,
-                            'arn': listener[4],
+                            'arn': format_arn(listener[4]),
                             'error': error_msg
                         }))
 

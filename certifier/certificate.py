@@ -53,11 +53,9 @@ def get_expiry(host, port=443):
 
         # Pull the certs `notAfter` date into a datetime object
         expire_date = datetime.strptime(x509.get_notAfter(), "%Y%m%d%H%M%SZ")
-
+        ssl_sock.shutdown()
 
         return expire_date
-
-        ssl_sock.shutdown()
 
     except SSL.Error as e:
         raise

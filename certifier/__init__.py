@@ -5,6 +5,8 @@ import platform
 import argparse
 import ConfigParser
 
+from datetime import datetime, timedelta
+
 __version__ = '0.0.1'
 __author__ = 'Behance Ops'
 
@@ -15,8 +17,25 @@ USER_AGENT = 'BehanceOps Certifier/%s Python/%s %s/%s' % (
     platform.release()
 )
 
-def logger():
-    pass
+def format_arn(arn):
+    return arn.split(':')[-1]
+
+def format_elb_dns_name(dns_name):
+    return dns_name.split('.')[0]
+
+def within_danger(expiry, days_before_expiry=60):
+    """Check that the expiration date is greater than `days_before_expiry` away"""
+
+    # If today + `days_before_expiry` is after the expiry, scream.
+    danger_date = datetime.now() + timedelta(days=days_before_expiry)
+
+    # Calculate how many days until expiry
+    diff = (expiry - datetime.now()).days
+
+    if danger_date > expiry:
+        return (True, diff)
+    else:
+        return (False, diff)
 
 def aws_credentials(credentials_file, profile):
     """Try to get credentials"""

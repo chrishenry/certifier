@@ -9,3 +9,4 @@ unittest2==0.5.1
 sure==1.2.9
 pygerduty==0.28
 pyopenssl==0.13.0
+termcolor==1.1.0
