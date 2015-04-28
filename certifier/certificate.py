@@ -8,9 +8,6 @@ from datetime import datetime, timedelta
 from exception import CertifierException, CertifierWarningException
 
 from OpenSSL import SSL
-PYOPENSSL = True
-
-CA_CERTS = "/etc/ssl/certs/ca-certificates.crt"
 
 # TODO: this check could be a bit more useful, as it returns codes listed
 #   here; https://www.openssl.org/docs/apps/verify.html#DIAGNOSTICS
@@ -27,7 +24,8 @@ def get_expiry(host, port=443):
         # Check the DNS name
         socket.getaddrinfo(host, port)[0][4][0]
 
-        # Connect to the host and get the certificate
+        # Connect to the host and get the certificate, keep a short timeout for
+        #   infrastructure that we inevitably won't have access to.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
         sock.connect((host, port))

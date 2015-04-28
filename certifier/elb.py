@@ -33,9 +33,9 @@ def certify_elbs(aws_credentials, region='us-east-1'):
                 expiry = get_expiry(elb.dns_name)
 
             except CertifierWarningException as e:
-                print "CertifierWarningException"
-                print e.host
-                print e.message
+                # print "CertifierWarningException"
+                # print e.host
+                # print e.message
 
                 error_msg = e.message
 
