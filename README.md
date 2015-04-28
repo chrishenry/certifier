@@ -47,7 +47,7 @@ export PD_KEY=putyourrealapikeyhere
 export PD_SERVICE_KEY=thisisyourservicekey
 ```
 
-## Execution
+## Usage
 
 ```
 ± |initial ✗| → ./bin/certifier --help
