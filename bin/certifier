@@ -11,6 +11,7 @@ from cement.core import backend, foundation, controller, handler, hook, output
 
 from certifier import add_args, aws_credentials
 from certifier.elb import certify_elbs
+from certifier.exception import *
 
 from tabulate import tabulate
 
@@ -28,9 +29,27 @@ class CertifierBaseController(controller.CementBaseController):
     def elb(self):
         self.app.log.info('Inside elb function.')
 
-        creds = aws_credentials(self.app.pargs.credentials_file, self.app.pargs.profile)
+        try:
 
-        print certify_elbs(creds)
+            creds = aws_credentials(self.app.pargs.credentials_file, self.app.pargs.profile)
+            print certify_elbs(creds)
+
+        except CertifierWarningException as e:
+            print "CertifierWarningException"
+            print e.host
+            print e.message
+            exit(1)
+
+        except CertifierException as e:
+            print "CertifierException"
+            print e.host
+            print e.message
+            exit(1)
+
+        except Exception as e:
+            print e
+            print type(e)
+            exit(1)
 
 class Certifier(foundation.CementApp):
     class Meta:
