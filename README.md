@@ -6,7 +6,7 @@ Cloudfront distributions and ELBs.
 
 ## AWS Authentication
 
-Certifier will take AWS creds will look for credentials in the following order;
+Certifier will will look for credentials in the following order;
 
 * Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
 * Configuration file, passed via the `-k` / `--credentials-file` option.
@@ -50,12 +50,15 @@ export PD_SERVICE_KEY=thisisyourservicekey
 ## Usage
 
 ```
-± |initial ✗| → ./bin/certifier --help
+± |initial ✓| → ./bin/certifier --help
 usage: certifier (sub-commands ...) [options ...] {arguments ...}
 
 CLI for Certifier.
 
 commands:
+
+  cloudfront
+    Check CloudFront certs
 
   elb
     Check ELB certs
@@ -76,3 +79,15 @@ optional arguments:
                         AWS region, defaults to ue1
   -d DAYS, --days DAYS  How many days in advance of expiry to alert.
 ```
+
+## Caveats
+
+When certifier checks infrastructure, it may not necessarily know the correct
+DNS name, so name-based checking can __not__ be a feature. However, the main
+goal is to check expiration, which is entirely possible via an SSL connection.
+
+When checking cloudfront, we __do__ need to use the cname provided via the api.
+This is because Cloudfront will use it's own certificate (*.cloudfront.com) when
+serving SSL over the default dns name.
+
+
