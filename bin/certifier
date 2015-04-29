@@ -40,7 +40,7 @@ class CertifierBaseController(controller.CementBaseController):
                 'days_til_expiry': 30
             })
 
-        pd_create_event(fake_certification)
+        pd_create_event(fake_certification, resource_type='elb')
 
 
     @controller.expose(help="Check ELB certs")
