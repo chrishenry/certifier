@@ -15,6 +15,7 @@ from certifier import add_args, aws_credentials, within_danger, pd_create_event
 from certifier.elb import certify_elbs
 from certifier.cloudfront import certify_distributions
 from certifier.exception import *
+from certifier.certificate import get_expiry
 
 from tabulate import tabulate
 from termcolor import colored
@@ -42,6 +43,32 @@ class CertifierBaseController(controller.CementBaseController):
 
         pd_create_event(fake_certification, resource_type='elb')
 
+    @controller.expose(help='Check expiration on a random domain.')
+    def domain(self):
+
+        if self.app.pargs.domain is None:
+            print "Please pass a domain"
+            exit()
+
+        expiry = get_expiry(self.app.pargs.domain)
+
+        danger_tuple = within_danger(
+            expiry,
+            days_before_expiry=self.app.pargs.days
+        )
+
+        print danger_tuple
+
+        if danger_tuple[0]:
+            fake_certification = OrderedDict({
+                    'dns_name': self.app.pargs.domain,
+                    'expiry': expiry,
+                    'arn': None,
+                    'error': None,
+                    'days_til_expiry': danger_tuple[1]
+                })
+
+            pd_create_event(fake_certification, resource_type='domain')
 
     @controller.expose(help="Check ELB certs")
     def elb(self):

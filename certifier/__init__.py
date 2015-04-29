@@ -58,6 +58,13 @@ def pd_create_event(certification, resource_type):
         details = "Distribution %s expires in %s days" % \
                     (certification['dns_name'], certification['days_til_expiry'])
 
+    if resource_type == 'domain':
+        description = "Domain %s's SSL cert expires soon." % certification['dns_name']
+        incident_key = "DOMAIN-%s/SSL_EXPIRY" % certification['dns_name']
+        details = "Distribution %s expires in %s days" % \
+                    (certification['dns_name'], certification['days_til_expiry'])
+
+
     try:
 
         pager = pygerduty.PagerDuty("behance", pd_key)
@@ -147,5 +154,9 @@ def add_args(parser):
     parser.add_argument('-d', '--days',
         type=int, default=60,
         help='How many days in advance of expiry to alert.'
+    )
+    parser.add_argument('-e', '--domain',
+        type=str, default=None,
+        help='A domain to check'
     )
 
