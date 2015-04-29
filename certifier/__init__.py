@@ -21,6 +21,9 @@ def format_elb_dns_name(dns_name):
 def within_danger(expiry, days_before_expiry=60):
     """Check that the expiration date is greater than `days_before_expiry` away"""
 
+    if expiry is None:
+        return (False, 'NA')
+
     # If today + `days_before_expiry` is after the expiry, scream.
     danger_date = datetime.now() + timedelta(days=days_before_expiry)
 
@@ -32,7 +35,7 @@ def within_danger(expiry, days_before_expiry=60):
     else:
         return (False, diff)
 
-def pd_create_event(certification):
+def pd_create_event(certification, resource_type):
 
     if not os.environ.get('PD_KEY') or not os.environ.get('PD_SERVICE_KEY'):
         raise Exception("Set PD_KEY and PD_SERVICE_KEY")
@@ -41,10 +44,19 @@ def pd_create_event(certification):
     pd_key = os.environ.get('PD_KEY')
     pd_service_key = os.environ.get('PD_SERVICE_KEY')
 
-    description = "ELB %s's SSL cert expires soon." % certification['dns_name']
-    incident_key = "ELB-%s/SSL_EXPIRY" % certification['dns_name']
-    details = "ELB %s's' with cert %s, expires in %s days" % \
-                (certification['dns_name'], certification['arn'], certification['days_til_expiry'])
+    if resource_type == 'elb':
+
+        description = "ELB %s's SSL cert expires soon." % certification['dns_name']
+        incident_key = "ELB-%s/SSL_EXPIRY" % certification['dns_name']
+        details = "ELB %s's' with cert %s, expires in %s days" % \
+                    (certification['dns_name'], certification['arn'], certification['days_til_expiry'])
+
+    if resource_type == 'cloudfront':
+
+        description = "Distribution %s's SSL cert expires soon." % certification['dns_name']
+        incident_key = "CDN-%s/SSL_EXPIRY" % certification['dns_name']
+        details = "Distribution %s expires in %s days" % \
+                    (certification['dns_name'], certification['days_til_expiry'])
 
     try:
 

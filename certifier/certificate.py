@@ -46,6 +46,14 @@ def get_expiry(host, port=443):
 
         x509 = ssl_sock.get_peer_certificate()
 
+        # print '********************************'
+        # print dir(x509)
+        # print x509.get_notAfter()
+        # print x509.get_subject()
+        # print x509.get_issuer()
+        # print x509.has_expired()
+        # print x509.get_signature_algorithm()
+
         if x509.has_expired():
             raise CertifierException(host, "Cert is expired!")
 

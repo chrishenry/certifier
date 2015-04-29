@@ -13,6 +13,7 @@ from cement.core import backend, foundation, controller, handler, hook, output
 
 from certifier import add_args, aws_credentials, within_danger, pd_create_event
 from certifier.elb import certify_elbs
+from certifier.cloudfront import certify_distributions
 from certifier.exception import *
 
 from tabulate import tabulate
@@ -60,11 +61,41 @@ class CertifierBaseController(controller.CementBaseController):
                 # If we're in the range of days we want to alert on, change the
                 #   text to red and initiate a PD alert
                 if danger_tuple[0]:
-                    pd_create_event(certification)
+                    certification['days_til_expiry'] = danger_tuple[1]
+
+                    pd_create_event(certification, resource_type='elb')
                     certification['days_til_expiry'] = colored(danger_tuple[1], 'red')
                 else:
                     certification['days_til_expiry'] = colored(danger_tuple[1], 'green')
 
+
+            if certification['error'] is not None:
+                certification['error'] = colored(certification['error'], 'red')
+
+        self.app.render(certifications)
+        return certifications
+
+    @controller.expose(help="Check CloudFront certs")
+    def cloudfront(self):
+
+        creds = aws_credentials(self.app.pargs.credentials_file, self.app.pargs.profile)
+        certifications = certify_distributions(creds)
+
+        for certification in certifications:
+            danger_tuple = within_danger(
+                certification['expiry'],
+                days_before_expiry=self.app.pargs.days
+            )
+
+            # If we're in the range of days we want to alert on, change the
+            #   text to red and initiate a PD alert
+            if danger_tuple[0]:
+                certification['days_til_expiry'] = danger_tuple[1]
+
+                pd_create_event(certification, resource_type='cloudfront')
+                certification['days_til_expiry'] = colored(danger_tuple[1], 'red')
+            else:
+                certification['days_til_expiry'] = colored(danger_tuple[1], 'green')
 
             if certification['error'] is not None:
                 certification['error'] = colored(certification['error'], 'red')
