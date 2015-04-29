@@ -1,0 +1,162 @@
+#!/usr/bin/env python
+
+import sys, os
+from datetime import datetime
+from collections import OrderedDict
+
+extra = os.path.dirname(os.path.dirname(sys.argv[0]))
+sys.path.insert(0, extra)
+
+import cement
+from cement.core.foundation import CementApp
+from cement.core import backend, foundation, controller, handler, hook, output
+
+from certifier import add_args, aws_credentials, within_danger, pd_create_event
+from certifier.elb import certify_elbs
+from certifier.cloudfront import certify_distributions
+from certifier.exception import *
+from certifier.certificate import get_expiry
+
+from tabulate import tabulate
+from termcolor import colored
+
+# define an application base controller
+class CertifierBaseController(controller.CementBaseController):
+    class Meta:
+        label = 'base'
+        description = "CLI for Certifier."
+
+    @controller.expose(hide=True, aliases=['run'])
+    def default(self):
+        self.app.log.info('Inside base.default function. It doesn\'t do anything. Yet.')
+
+    @controller.expose(help="Test the Pager Duty Integration")
+    def test_pd(self):
+
+        fake_certification = OrderedDict({
+                'dns_name': "fake.infra.in.aws.com",
+                'expiry': datetime.now(),
+                'arn': 'server-certificate/wildcard.stage-be-aws.sha2.net',
+                'error': None,
+                'days_til_expiry': 30
+            })
+
+        pd_create_event(fake_certification, resource_type='elb')
+
+    @controller.expose(help='Check expiration on a random domain.')
+    def domain(self):
+
+        if self.app.pargs.domain is None:
+            print "Please pass a domain"
+            exit()
+
+        expiry = get_expiry(self.app.pargs.domain)
+
+        danger_tuple = within_danger(
+            expiry,
+            days_before_expiry=self.app.pargs.days
+        )
+
+        print danger_tuple
+
+        if danger_tuple[0]:
+            fake_certification = OrderedDict({
+                    'dns_name': self.app.pargs.domain,
+                    'expiry': expiry,
+                    'arn': None,
+                    'error': None,
+                    'days_til_expiry': danger_tuple[1]
+                })
+
+            pd_create_event(fake_certification, resource_type='domain')
+
+    @controller.expose(help="Check ELB certs")
+    def elb(self):
+        self.app.log.info('Inside elb function.')
+
+        creds = aws_credentials(self.app.pargs.credentials_file, self.app.pargs.profile)
+        certifications = certify_elbs(creds)
+
+        for certification in certifications:
+
+            if certification['error'] is None:
+                danger_tuple = within_danger(
+                    certification['expiry'],
+                    days_before_expiry=self.app.pargs.days
+                )
+
+                # If we're in the range of days we want to alert on, change the
+                #   text to red and initiate a PD alert
+                if danger_tuple[0]:
+                    certification['days_til_expiry'] = danger_tuple[1]
+
+                    pd_create_event(certification, resource_type='elb')
+                    certification['days_til_expiry'] = colored(danger_tuple[1], 'red')
+                else:
+                    certification['days_til_expiry'] = colored(danger_tuple[1], 'green')
+
+
+            if certification['error'] is not None:
+                certification['error'] = colored(certification['error'], 'red')
+
+        self.app.render(certifications)
+        return certifications
+
+    @controller.expose(help="Check CloudFront certs")
+    def cloudfront(self):
+
+        creds = aws_credentials(self.app.pargs.credentials_file, self.app.pargs.profile)
+        certifications = certify_distributions(creds)
+
+        for certification in certifications:
+            danger_tuple = within_danger(
+                certification['expiry'],
+                days_before_expiry=self.app.pargs.days
+            )
+
+            # If we're in the range of days we want to alert on, change the
+            #   text to red and initiate a PD alert
+            if danger_tuple[0]:
+                certification['days_til_expiry'] = danger_tuple[1]
+
+                pd_create_event(certification, resource_type='cloudfront')
+                certification['days_til_expiry'] = colored(danger_tuple[1], 'red')
+            else:
+                certification['days_til_expiry'] = colored(danger_tuple[1], 'green')
+
+            if certification['error'] is not None:
+                certification['error'] = colored(certification['error'], 'red')
+
+        self.app.render(certifications)
+        return certifications
+
+class Certifier(foundation.CementApp):
+    class Meta:
+        label = 'certifier'
+        base_controller = CertifierBaseController
+
+# Create a custom output handler
+class TabulateOutputHandler(cement.core.output.CementOutputHandler):
+    class Meta:
+        label = 'tabulateoutput'
+
+    def render(self, data, template):
+        print tabulate(data, headers='keys')
+
+# create the app
+# TODO: figure out a different way to configure the output handler
+app = Certifier(output_handler=TabulateOutputHandler)
+
+try:
+
+    # Setup the application
+    app.setup()
+
+    add_args(app.args)
+
+    # Run it!
+    app.run()
+
+finally:
+    # close the application
+    app.close()

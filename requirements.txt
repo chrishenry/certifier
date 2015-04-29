@@ -1,0 +1,12 @@
+clint==0.3.4
+boto==2.36.0
+cement==2.4.0
+tabulate==0.7.3
+mock==1.0.1
+nose==1.2.1
+argparse==1.2.1
+unittest2==0.5.1
+sure==1.2.9
+pygerduty==0.28
+pyopenssl==0.13.0
+termcolor==1.1.0
