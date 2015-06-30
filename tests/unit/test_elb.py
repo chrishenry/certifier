@@ -51,7 +51,7 @@ class ElbTestCase(CertifierTestCase):
         elbs = get_elbs(self.creds)
         len(elbs).should.equal(50)
 
-    def create_elb(self):
+    def create_elb(self, scheme='internet-facing'):
 
         name = self.random_name()
 
@@ -59,5 +59,5 @@ class ElbTestCase(CertifierTestCase):
 
         zones = ['us-east-1a', 'us-east-1b']
         ports = [(80, 80, 'http'), (443, 80, 'https', 'arn:aws:iam::1234567890123:server-certificate/my.nifty.cert.net')]
-        lb = conn.create_load_balancer(name, zones, ports)
+        lb = conn.create_load_balancer(name, zones, ports, scheme=scheme)
 
