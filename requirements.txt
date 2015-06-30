@@ -9,6 +9,6 @@ unittest2==0.5.1
 pygerduty==0.28
 pyopenssl==0.13.0
 termcolor==1.1.0
-moto==0.3.1
+moto==0.4.4
 sure==1.2.12
 coverage==3.7.1
