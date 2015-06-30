@@ -45,7 +45,7 @@ class ElbTestCase(CertifierTestCase):
     @mock_elb
     def test_get_elbs(self):
 
-        for x in range(1,51):
+        for x in range(0,50):
             self.create_elb()
 
         elbs = get_elbs(self.creds)

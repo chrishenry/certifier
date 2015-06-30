@@ -176,4 +176,4 @@ class CertifierTestCase(unittest.TestCase):
             "yonath",
         ]
 
-        return random.choice(left) + "_" + random.choice(right)
+        return random.choice(left) + "_" + random.choice(right) + "_" + str(random.randrange(0, 100000000))
