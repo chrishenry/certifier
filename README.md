@@ -60,6 +60,9 @@ commands:
   cloudfront
     Check CloudFront certs
 
+  domain
+    Check expiration on a random domain.
+
   elb
     Check ELB certs
 
@@ -78,6 +81,8 @@ optional arguments:
   -r {us-east-1,us-west-2,eu-west-1}, --region {us-east-1,us-west-2,eu-west-1}
                         AWS region, defaults to ue1
   -d DAYS, --days DAYS  How many days in advance of expiry to alert.
+  -e DOMAIN, --domain DOMAIN
+                        A domain to check
 ```
 
 ## Caveats
