@@ -61,16 +61,20 @@ class ElbTestCase(CertifierTestCase):
 
         self.create_elb()
         self.create_elb(scheme='internal')
+        self.create_elb(scheme='poopy-scheme', include_https=False)
 
         certify_elbs(self.creds)
 
-    def create_elb(self, scheme='internet-facing'):
+    def create_elb(self, scheme='internet-facing', include_https=True):
 
         name = self.random_name()
 
         conn = elb.connect_to_region('us-east-1')
 
         zones = ['us-east-1a', 'us-east-1b']
-        ports = [(80, 80, 'http'), (443, 80, 'https', 'arn:aws:iam::1234567890123:server-certificate/my.nifty.cert.net')]
+        ports = [(80, 80, 'http')]
+        if include_https:
+            ports.append((443, 80, 'https', 'arn:aws:iam::1234567890123:server-certificate/my.nifty.cert.net'))
+
         lb = conn.create_load_balancer(name, zones, ports, scheme=scheme)
 
