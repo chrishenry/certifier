@@ -15,8 +15,6 @@ from mock import Mock
 from nose.plugins.attrib import attr
 
 import boto.ec2.elb as elb
-
-
 from moto import mock_elb
 
 from certifier.elb import *
@@ -30,3 +28,7 @@ class CertificateTestCase(CertifierTestCase):
     def test_pyopenssl_callback(self):
 
         pyopenssl_check_callback(None, None, None, None, None).should.be.ok
+
+    def test_get_expiry(self):
+        get_expiry('www.google.com').should.be.a('datetime.datetime')
+
