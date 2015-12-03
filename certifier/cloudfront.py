@@ -1,6 +1,10 @@
 
 from collections import OrderedDict
 
+import pprint
+
+import botocore.session
+
 import boto.cloudfront
 from socket import *
 
@@ -11,27 +15,24 @@ from OpenSSL import SSL
 
 def certify_distributions(aws_credentials):
 
-    conn = boto.cloudfront.CloudFrontConnection(
-                aws_access_key_id=aws_credentials['aws_access_key_id'],
-                aws_secret_access_key=aws_credentials['aws_secret_access_key']
-            )
-
     distributions = get_distributions(aws_credentials)
 
     retval = []
 
-    for distribution in distributions:
+    for distribution in distributions['DistributionList']['Items']:
 
         expiry = None
         error_msg = None
 
         # If there's no CNAME, we're using the *.cloudfront cert
-        if len(distribution.cnames) == 0:
+        if 'CloudFrontDefaultCertificate' in distribution['ViewerCertificate'].keys():
             continue
+
 
         try:
 
-            expiry = get_expiry(distribution.cnames[0])
+            cname = distribution['Aliases']['Items'][0]
+            expiry = get_expiry(cname)
 
         except CertifierWarningException as e:
             # print "CertifierWarningException"
@@ -84,7 +85,7 @@ def certify_distributions(aws_credentials):
 
 
         retval.append(OrderedDict({
-                        'dns_name': distribution.cnames[0],
+                        'dns_name': cname,
                         'expiry': expiry,
                         'arn': None,
                         'error': error_msg
@@ -94,12 +95,13 @@ def certify_distributions(aws_credentials):
 
 def get_distributions(aws_credentials):
 
-    conn = boto.cloudfront.CloudFrontConnection(
+    session = botocore.session.get_session()
+    client = session.create_client('cloudfront',
+                region_name='us-east-1',
                 aws_access_key_id=aws_credentials['aws_access_key_id'],
-                aws_secret_access_key=aws_credentials['aws_secret_access_key']
-            )
+                aws_secret_access_key=aws_credentials['aws_secret_access_key'])
 
-    distributions = conn.get_all_distributions()
+    distributions = client.list_distributions()
 
     return distributions
 
