@@ -19,6 +19,9 @@ def certify_distributions(aws_credentials):
 
     retval = []
 
+    if 'Items' not in distributions['DistributionList']:
+        return retval
+
     for distribution in distributions['DistributionList']['Items']:
 
         expiry = None
