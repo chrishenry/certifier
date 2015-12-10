@@ -1,0 +1,10 @@
+image: certifier
+name: certifier
+volume:
+  - ~/.boto:/root/.boto:ro
+rm: true
+tty: true
+workdir: /app/
+env:
+  - PD_KEY=$PD_KEY
+  - PD_SERVICE_KEY=$PD_SERVICE_KEY
