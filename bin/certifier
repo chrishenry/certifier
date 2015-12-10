@@ -28,7 +28,7 @@ class CertifierBaseController(controller.CementBaseController):
 
     @controller.expose(hide=True, aliases=['run'])
     def default(self):
-        self.app.log.info('Inside base.default function. It doesn\'t do anything. Yet.')
+        app.args.print_help()
 
     @controller.expose(help="Test the Pager Duty Integration")
     def test_pd(self):
