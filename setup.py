@@ -15,7 +15,7 @@ install_requires = [
 
 setup(
     name='certifier',
-    version='0.0.1',
+    version='0.0.2',
     description='Automated SSL Cert Checker',
     author='Behance Ops',
     author_email='devops-behance@adpbe.com',
