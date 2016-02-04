@@ -36,7 +36,7 @@ class CertifierBaseController(controller.CementBaseController):
         fake_certification = OrderedDict({
                 'dns_name': "fake.infra.in.aws.com",
                 'expiry': datetime.now(),
-                'arn': 'server-certificate/wildcard.stage-be-aws.sha2.net',
+                'arn': 'server-certificate/wildcard.stage-tier-domain.sha2.net',
                 'error': None,
                 'days_til_expiry': 30
             })
