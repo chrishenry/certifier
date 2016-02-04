@@ -78,22 +78,25 @@ class CertifierBaseController(controller.CementBaseController):
 
         for certification in certifications:
 
-            if certification['error'] is None:
-                danger_tuple = within_danger(
-                    certification['expiry'],
-                    days_before_expiry=self.app.pargs.days
-                )
+            danger_tuple = within_danger(
+                certification['expiry'],
+                days_before_expiry=self.app.pargs.days
+            )
 
-                # If we're in the range of days we want to alert on, change the
-                #   text to red and initiate a PD alert
-                if danger_tuple[0]:
-                    certification['days_til_expiry'] = danger_tuple[1]
+            # Added here bc pd_create_event relies on `days_til_expiry`
+            certification['days_til_expiry'] = danger_tuple[1]
 
-                    pd_create_event(certification, resource_type='elb')
-                    certification['days_til_expiry'] = colored(danger_tuple[1], 'red')
-                else:
-                    certification['days_til_expiry'] = colored(danger_tuple[1], 'green')
+            # If we're in the range of days we want to alert on, change the
+            #   text to red and initiate a PD alert
+            if danger_tuple[0]:
+                pd_create_event(certification, resource_type='elb')
+                certification['days_til_expiry'] = colored(danger_tuple[1], 'red')
+            else:
+                certification['days_til_expiry'] = colored(danger_tuple[1], 'green')
 
+            if self.app.pargs.page_on_error and certification['error'] is not None:
+                print 'paging on error'
+                pd_create_event(certification, resource_type='elb')
 
             if certification['error'] is not None:
                 certification['error'] = colored(certification['error'], 'red')
@@ -116,6 +119,7 @@ class CertifierBaseController(controller.CementBaseController):
             # If we're in the range of days we want to alert on, change the
             #   text to red and initiate a PD alert
             if danger_tuple[0]:
+                # Added here bc pd_create_event relies on `days_til_expiry`
                 certification['days_til_expiry'] = danger_tuple[1]
 
                 pd_create_event(certification, resource_type='cloudfront')

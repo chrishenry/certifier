@@ -46,10 +46,16 @@ def pd_create_event(certification, resource_type):
 
     if resource_type == 'elb':
 
-        description = "ELB %s's SSL cert expires soon." % certification['dns_name']
-        incident_key = "ELB-%s/SSL_EXPIRY" % certification['dns_name']
-        details = "ELB %s's' with cert %s, expires in %s days" % \
-                    (certification['dns_name'], certification['arn'], certification['days_til_expiry'])
+        if certification['error'] is not None:
+            description = "ELB %s error." % certification['dns_name']
+            incident_key = "ELB-%s/SSL_EXPIRY" % certification['dns_name']
+            details = "Certifier has an error connecting to %s: %s" % \
+                        (certification['dns_name'], certification['error'])
+        else:
+            description = "ELB %s's SSL cert expires soon." % certification['dns_name']
+            incident_key = "ELB-%s/SSL_EXPIRY" % certification['dns_name']
+            details = "ELB %s's' with cert %s, expires in %s days" % \
+                        (certification['dns_name'], certification['arn'], certification['days_til_expiry'])
 
     if resource_type == 'cloudfront':
 
@@ -159,4 +165,7 @@ def add_args(parser):
         type=str, default=None,
         help='A domain to check'
     )
+    parser.add_argument('-f', '--page-on-error',
+        action='store_true', default=False,
+        help='Page if SSL connections fails')
 
