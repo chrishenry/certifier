@@ -4,4 +4,4 @@ argparse==1.2.1
 unittest2==0.5.1
 sure==1.2.12
 coverage==3.7.1
--e git+https://git@github.com/chrishenry/moto@elb-scheme#egg=moto
+moto==0.4.21
